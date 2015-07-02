@@ -10,6 +10,7 @@ var watchify = require('watchify');
 var uglifyify = require('uglifyify');
 var envify = require('envify/custom');
 var debug = require('debug')('bundler:js');
+var zlib = require('zlib');
 
 module.exports = Bundler;
 inherits(Bundler, events.EventEmitter);
@@ -40,6 +41,7 @@ function Bundler( i, o, opts ){
 	mkdirp.sync(o);
 
 	var script = o + '/' + (opts.scriptName || 'script') + '.js';
+	var gzipped = script + '.gz';
 	var tmpScript = opts.tmp && script + '.part';
 
 	this.bundle = function(){
@@ -74,8 +76,15 @@ function Bundler( i, o, opts ){
 				else
 					this.emit('update');
 			});
-		else
+		else {
+			var gzip = zlib.createGzip();
+			var inp = fs.createReadStream(script);
+			var out = fs.createWriteStream(gzipped);
+
+			inp.pipe(gzip).pipe(out);
+
 			this.emit('update');
+		}
 	}
 
 	return this;
